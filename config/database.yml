@@ -24,3 +24,7 @@ production:
   port: <%= ENV.fetch("DB_PORT", 3306) %>
   username: <%= ENV["DB_USER"] %>
   password: <%= ENV["DB_PASSWORD"] %>
+
+  ssl_mode: VERIFY_IDENTITY
+  sslca: /etc/ssl/certs/azure-mysql-roots.pem
+  
