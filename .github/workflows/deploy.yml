@@ -10,11 +10,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: |
-          cd /home/gha/rails-minimal-users
+          cd /home/rails-minimal-users
           git fetch --all
           git reset --hard origin/main
           bundle install --jobs 4
           RAILS_ENV=production rails db:migrate
           sudo systemctl restart railsapp
           echo "Deployment to Azure VM completed."
-          
