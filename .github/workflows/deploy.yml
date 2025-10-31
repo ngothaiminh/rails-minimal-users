@@ -55,7 +55,7 @@ jobs:
     runs-on: [self-hosted, azure, vm]
     needs: test
     env:
-      APP_DIR: /home/rails-minimal-users
+      APP_DIR: /home/azureuser/rails-minimal-users
       SERVICE_NAME: railsapp
     steps:
       - name: Checkout
