@@ -69,6 +69,32 @@ jobs:
 
           sudo chown -R azureuser:azureuser "$APP_DIR"
 
+      - name: Load secrets from VM and export to this job
+        shell: bash -l {0}
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          set -e
+
+          export PS1='$'           
+          set -a                   
+          [ -f ~/.bashrc ] && source ~/.bashrc || true
+          set +a
+          
+          if [ -f config/master.key ]; then
+            echo "RAILS_MASTER_KEY=$(cat config/master.key)" >> "$GITHUB_ENV"
+            echo "[env] RAILS_MASTER_KEY exported from config/master.key"
+          fi
+          
+          if [ -n "${SECRET_KEY_BASE:-}" ]; then
+            echo "SECRET_KEY_BASE=$SECRET_KEY_BASE" >> "$GITHUB_ENV"
+            echo "[env] SECRET_KEY_BASE exported from shell"
+          fi
+          
+          if ! printenv | egrep -q 'RAILS_MASTER_KEY|SECRET_KEY_BASE'; then
+            echo "ERROR: Missing RAILS_MASTER_KEY/SECRET_KEY_BASE. Move them to a .env or ensure .bashrc sets them without interactive guards."
+            exit 1
+          fi
+
       - name: Bundle install (production)
         shell: bash -l {0}
         working-directory: ${{ env.APP_DIR }}
@@ -83,7 +109,6 @@ jobs:
         env:
           RAILS_ENV: production
         run: |
-          source ~/.bashrc
           bundle exec rails db:migrate
 
       - name: Assets precompile (production)
@@ -92,7 +117,6 @@ jobs:
         env:
           RAILS_ENV: production
         run: |
-          source ~/.bashrc
           bundle exec rails assets:precompile
 
       - name: Restart app service
