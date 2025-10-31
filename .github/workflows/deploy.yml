@@ -1,19 +1,109 @@
-name: Deploy Rails App to Azure VM
+name: CI + Deploy Rails App to Azure VM
 
 on:
   push:
     branches: [ main ]
 
+concurrency:
+  group: rails-minimal-users-main
+  cancel-in-progress: true
+
 jobs:
-  deploy:
+  test:
+    name: Run tests on self-hosted runner
     runs-on: [self-hosted, azure, vm]
+    defaults:
+      run:
+        working-directory: ${{ github.workspace }}
     steps:
-      - uses: actions/checkout@v4
-      - run: |
-          cd /home/rails-minimal-users
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show workspace
+        run: |
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          pwd && ls -la
+
+      - name: Bundle install (test)
+        shell: bash -l {0}
+        run: |
+          bundle config set path 'vendor/bundle'
+          bundle install --jobs 4
+
+      - name: Prepare DB test
+        shell: bash -l {0}
+        env:
+          RAILS_ENV: test
+        run: |
+          if [ -x bin/rails ]; then
+            bundle exec rails db:prepare
+          else
+            bundle exec rake db:prepare
+          fi
+
+      - name: Run test (RSpec hoặc Minitest)
+        shell: bash -l {0}
+        run: |
+          if [ -d spec ] || grep -qi rspec Gemfile; then
+            bundle exec rspec --format documentation
+          else
+            bundle exec rails test
+          fi
+
+  deploy:
+    name: Deploy to production folder on VM
+    runs-on: [self-hosted, azure, vm]
+    needs: test
+    env:
+      APP_DIR: /home/rails-minimal-users
+      SERVICE_NAME: railsapp
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Pull code repo production
+        run: |
+          cd "$APP_DIR"
+
           git fetch --all
           git reset --hard origin/main
+
+          sudo chown -R azureuser:azureuser "$APP_DIR"
+
+      - name: Bundle install (production)
+        shell: bash -l {0}
+        working-directory: ${{ env.APP_DIR }}
+        run: |
+          bundle config set deployment 'true'
+          bundle config set without 'development test'
           bundle install --jobs 4
-          RAILS_ENV=production rails db:migrate
-          sudo systemctl restart railsapp
+
+      - name: DB migrate (production)
+        shell: bash -l {0}
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          RAILS_ENV: production
+        run: |
+          if [ -x bin/rails ]; then
+            bundle exec rails db:migrate
+          else
+            bundle exec rake db:migrate
+          fi
+
+      - name: Assets precompile (production)
+        shell: bash -l {0}
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          RAILS_ENV: production
+        run: |
+          if [ -x bin/rails ]; then
+            bundle exec rails assets:precompile
+          else
+            bundle exec rake assets:precompile
+          fi
+
+      - name: Restart app service
+        run: |
+          sudo systemctl restart "${SERVICE_NAME}"
+          sudo systemctl status  "${SERVICE_NAME}" --no-pager -l || true
           echo "Deployment to Azure VM completed."
