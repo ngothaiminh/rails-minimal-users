@@ -28,7 +28,7 @@ jobs:
       #   shell: bash -l {0}
       #   run: |
       #     bundle config set path 'vendor/bundle'
-      #     bundle install --jobs 4
+      #     bundle install
 
       # - name: Prepare DB test
       #   shell: bash -l {0}
@@ -76,7 +76,7 @@ jobs:
         run: |
           bundle config set deployment 'true'
           bundle config set without 'development test'
-          bundle install --jobs 4
+          bundle install
 
       - name: DB migrate (production)
         shell: bash -l {0}
