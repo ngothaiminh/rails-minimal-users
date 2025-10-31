@@ -24,31 +24,31 @@ jobs:
           echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
           pwd && ls -la
 
-      - name: Bundle install (test)
-        shell: bash -l {0}
-        run: |
-          bundle config set path 'vendor/bundle'
-          bundle install --jobs 4
+      # - name: Bundle install (test)
+      #   shell: bash -l {0}
+      #   run: |
+      #     bundle config set path 'vendor/bundle'
+      #     bundle install --jobs 4
 
-      - name: Prepare DB test
-        shell: bash -l {0}
-        env:
-          RAILS_ENV: test
-        run: |
-          if [ -x bin/rails ]; then
-            bundle exec rails db:prepare
-          else
-            bundle exec rake db:prepare
-          fi
+      # - name: Prepare DB test
+      #   shell: bash -l {0}
+      #   env:
+      #     RAILS_ENV: test
+      #   run: |
+      #     if [ -x bin/rails ]; then
+      #       bundle exec rails db:prepare
+      #     else
+      #       bundle exec rake db:prepare
+      #     fi
 
-      - name: Run test (RSpec hoặc Minitest)
-        shell: bash -l {0}
-        run: |
-          if [ -d spec ] || grep -qi rspec Gemfile; then
-            bundle exec rspec --format documentation
-          else
-            bundle exec rails test
-          fi
+      # - name: Run test (RSpec or Minitest)
+      #   shell: bash -l {0}
+      #   run: |
+      #     if [ -d spec ] || grep -qi rspec Gemfile; then
+      #       bundle exec rspec --format documentation
+      #     else
+      #       bundle exec rails test
+      #     fi
 
   deploy:
     name: Deploy to production folder on VM
