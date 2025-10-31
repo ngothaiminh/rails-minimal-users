@@ -65,8 +65,7 @@ jobs:
         run: |
           cd "$APP_DIR"
 
-          git fetch --all
-          git reset --hard origin/main
+          git pull origin main
 
           sudo chown -R azureuser:azureuser "$APP_DIR"
 
