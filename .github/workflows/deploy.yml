@@ -83,11 +83,8 @@ jobs:
         env:
           RAILS_ENV: production
         run: |
-          if [ -x bin/rails ]; then
-            bundle exec rails db:migrate
-          else
-            bundle exec rake db:migrate
-          fi
+          source ~/.bashrc
+          bundle exec rails db:migrate
 
       - name: Assets precompile (production)
         shell: bash -l {0}
@@ -95,11 +92,8 @@ jobs:
         env:
           RAILS_ENV: production
         run: |
-          if [ -x bin/rails ]; then
-            bundle exec rails assets:precompile
-          else
-            bundle exec rake assets:precompile
-          fi
+          source ~/.bashrc
+          bundle exec rails assets:precompile
 
       - name: Restart app service
         run: |
